@@ -1,8 +1,10 @@
 import numpy as np
+import string
 
 from keras.models import Sequential
 from keras.layers import Dense
 from keras.layers import LSTM
+from keras.layers import Activation
 import keras
 
 
@@ -36,10 +38,14 @@ def build_part1_RNN(window_size):
 
 ### Return the text input with only ascii lowercase and the punctuation given below included.
 def cleaned_text(text):
+    result_text = text.lower()
     punctuation = ['!', ',', '.', ':', ';', '?']
-    for char in punctuation:
-        text.replace(char,' ')
-    return text
+    lowercase = [c for c in string.ascii_lowercase]
+    bad_chars = [c for c in text if c not in punctuation and c not in lowercase]
+    for bad in bad_chars:
+        result_text = result_text.replace(bad, ' ')
+
+    return result_text
 
 ### The function below transforms the input text and window-size into a set of input/output pairs for use with our RNN model
 def window_transform_text(text, window_size, step_size):
@@ -47,17 +53,16 @@ def window_transform_text(text, window_size, step_size):
     inputs = []
     outputs = []
 
-    for i in range(int(np.ceil(len(text)/step_size) - window_size)):
-        offset = i*step_size
-        inputs.append(text[offset:offset + window_size])
-        outputs.append(text[offset + window_size:offset+ window_size + 1])
+    for i in range(0, int(np.ceil(len(text))) - window_size, step_size):
+        inputs.append(text[i:i + window_size])
+        outputs.append(text[i + window_size])
 
-    return inputs,outputs
+    return inputs, outputs
 
 # A single LSTM hidden layer with softmax activation, categorical_crossentropy loss
 def build_part2_RNN(window_size, num_chars):
     model = Sequential()
     model.add(LSTM(200, input_shape=(window_size, num_chars)))
     model.add(Dense(num_chars))
-    model.add(Dense(num_chars, activation='softmax'))
+    model.add(Activation('softmax'))
     return model
